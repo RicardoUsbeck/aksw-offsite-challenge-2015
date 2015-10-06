@@ -4,9 +4,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.aksw.jena_sparql_api.core.QueryExecutionFactory;
 import org.aksw.jena_sparql_api.model.QueryExecutionFactoryModel;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.hp.hpl.jena.query.QueryExecution;
@@ -15,6 +18,8 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 
 public class Baseline implements Approach {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Baseline.class);
 
     @Override
     public List<String> generateResourceRanking(List<String> queries, Model knowledgeBase) {
@@ -26,24 +31,33 @@ public class Baseline implements Approach {
     public ObjectIntOpenHashMap<String> sumUpResults(Model model, List<String> queries) {
         QueryExecutionFactoryModel factory = new QueryExecutionFactoryModel(model);
         ObjectIntOpenHashMap<String> countedResources = new ObjectIntOpenHashMap<String>();
+        int count = 0;
         for (String query : queries) {
             addResultCounts(factory, query, countedResources);
+            ++count;
+            if ((count % 100) == 0) {
+                LOGGER.info("saw " + count + " queries.");
+            }
         }
         return countedResources;
     }
 
-    public void addResultCounts(QueryExecutionFactoryModel factory, String query,
+    public void addResultCounts(QueryExecutionFactory factory, String query,
             ObjectIntOpenHashMap<String> countedResources) {
         QueryExecution qe = factory.createQueryExecution(query);
         ResultSet rs = qe.execSelect();
         QuerySolution qs;
         Iterator<String> varNames;
-        while (rs.hasNext()) {
-            qs = rs.next();
-            varNames = qs.varNames();
-            while (varNames.hasNext()) {
-                countedResources.putOrAdd(varNames.next(), 1, 1);
+        try {
+            while (rs.hasNext()) {
+                qs = rs.next();
+                varNames = qs.varNames();
+                while (varNames.hasNext()) {
+                    countedResources.putOrAdd(varNames.next(), 1, 1);
+                }
             }
+        } catch (Exception e) {
+            LOGGER.warn("Got exception while executing query: \"" + query + "\".", e);
         }
     }
 

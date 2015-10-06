@@ -9,13 +9,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.aksw.jena_sparql_api.core.QueryExecutionFactory;
 import org.aksw.jena_sparql_api.model.QueryExecutionFactoryModel;
+import org.aksw.jena_sparql_api.timeout.QueryExecutionFactoryTimeout;
 import org.aksw.simba.challenge.approaches.Approach;
 import org.aksw.simba.challenge.approaches.Baseline;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -23,9 +27,11 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 public class Evaluation {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Evaluation.class);
+
     private static final String MODEL_FILE = "data/swdf.nt";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Evaluation eval = new Evaluation();
         System.out.println(eval.crossValidationError(10, new Baseline()));
     }
@@ -96,16 +102,22 @@ public class Evaluation {
     @SuppressWarnings("rawtypes")
     protected ObjectIntOpenHashMap[] countResources(List<List<String>> partitions, Model model) {
         Baseline goldApproach = new Baseline();
-        QueryExecutionFactoryModel factory = new QueryExecutionFactoryModel(model);
+        QueryExecutionFactory factory = new QueryExecutionFactoryModel(model);
+        factory = new QueryExecutionFactoryTimeout(factory, 1000);
         ObjectIntOpenHashMap countedResources[] = new ObjectIntOpenHashMap[partitions.size()];
         ObjectIntOpenHashMap<String> partitionCounts = new ObjectIntOpenHashMap<String>();
         List<String> queries;
+        int count = 0;
         for (int i = 0; i < countedResources.length; ++i) {
             partitionCounts = new ObjectIntOpenHashMap<String>();
             countedResources[i] = partitionCounts;
             queries = partitions.get(i);
             for (String query : queries) {
                 goldApproach.addResultCounts(factory, query, partitionCounts);
+                ++count;
+                // if ((count % 100) == 0) {
+                LOGGER.info("saw " + count + " queries.");
+                // }
             }
         }
         return countedResources;
@@ -131,7 +143,7 @@ public class Evaluation {
                 --minRank;
             }
             maxRank = i;
-            while ((maxRank < uris.length) && (counts[maxRank + 1] == counts[maxRank])) {
+            while ((maxRank < (counts.length - 1)) && (counts[maxRank + 1] == counts[maxRank])) {
                 ++maxRank;
             }
             uriPosMapping.put(uris[i], Arrays.asList(new Double(minRank), new Double(maxRank)));
