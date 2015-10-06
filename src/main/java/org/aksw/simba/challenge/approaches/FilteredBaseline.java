@@ -12,6 +12,12 @@ public class FilteredBaseline extends Baseline {
 			if (query.contains("sample(")) {
 				queries.remove(i);
 			}
+			else if(query.contains("LIMIT")){
+				if(!query.contains("ORDER BY ")){
+					queries.remove(i);
+				}
+			}
+			
 		}
 
 		return super.generateResourceRanking(queries, knowledgeBase);

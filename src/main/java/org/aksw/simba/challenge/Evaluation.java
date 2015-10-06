@@ -14,6 +14,7 @@ import org.aksw.jena_sparql_api.model.QueryExecutionFactoryModel;
 import org.aksw.jena_sparql_api.timeout.QueryExecutionFactoryTimeout;
 import org.aksw.simba.challenge.approaches.Approach;
 import org.aksw.simba.challenge.approaches.Baseline;
+import org.aksw.simba.challenge.approaches.FilteredBaseline;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.riot.Lang;
@@ -42,7 +43,7 @@ public class Evaluation {
 
     public static void main(String[] args) throws IOException {
         Evaluation eval = new Evaluation();
-        System.out.println("average error = " + eval.crossValidationError(10, new Baseline()));
+        System.out.println("average error = " + eval.crossValidationError(10, new FilteredBaseline()));
     }
 
     @SuppressWarnings("unchecked")
@@ -94,7 +95,7 @@ public class Evaluation {
         return generateUriRankRangeMapping(gsResults[fold]);
     }
 
-    protected static Model readModel(String modelFile) throws FileNotFoundException {
+    public static Model readModel(String modelFile) throws FileNotFoundException {
         FileInputStream fin = null;
         try {
             Model model = ModelFactory.createDefaultModel();
