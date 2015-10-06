@@ -50,7 +50,7 @@ public class Evaluation {
         List<String> queries = QueryLoader.loadQueries();
         int partSize = queries.size() / n;
         List<List<String>> partitions = new ArrayList<>(n);
-        for (int i = 0; i < (n - 2); i++) {
+        for (int i = 0; i < (n - 1); i++) {
             partitions.add(queries.subList(i * partSize, (i + 1) * partSize));
         }
         partitions.add(queries.subList((n - 1) * partSize, queries.size()));
@@ -89,16 +89,7 @@ public class Evaluation {
     }
 
     private Map<String, List<Double>> generateExpectedResult(int fold, ObjectIntOpenHashMap<String>[] gsResults) {
-        ObjectIntOpenHashMap<String> expectedResults = new ObjectIntOpenHashMap<String>();
-        for (int i = 0; i < gsResults.length; ++i) {
-            for (int j = 0; j < gsResults[i].allocated.length; ++j) {
-                if (gsResults[i].allocated[j]) {
-                    expectedResults.putOrAdd((String) ((Object[]) gsResults[i].keys)[j], gsResults[i].values[j],
-                            gsResults[i].values[j]);
-                }
-            }
-        }
-        return generateUriRankRangeMapping(expectedResults);
+        return generateUriRankRangeMapping(gsResults[fold]);
     }
 
     protected static Model readModel(String modelFile) throws FileNotFoundException {
