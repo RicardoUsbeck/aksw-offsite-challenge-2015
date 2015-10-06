@@ -136,7 +136,7 @@ public class BruteForceValidation extends Evaluation {
 
     }
 
-    protected void writeFold(List<String> uris, long time) {
+    public static void writeFold(List<String> uris, long time) {
         try {
             FileUtils.writeLines(new File(OUTPUT_FOLDER + "results_" + time + ".txt"), uris);
         } catch (IOException e) {

@@ -16,6 +16,7 @@ import org.aksw.simba.challenge.approaches.Approach;
 import org.aksw.simba.challenge.approaches.Baseline;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.slf4j.Logger;
@@ -47,7 +48,7 @@ public class Evaluation {
 
     @SuppressWarnings("unchecked")
     public double crossValidationError(int n, Approach approach) throws IOException {
-        List<String> queries = QueryLoader.loadQueries();
+        List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         int partSize = queries.size() / n;
         List<List<String>> partitions = new ArrayList<>(n);
         for (int i = 0; i < (n - 1); i++) {
@@ -156,6 +157,8 @@ public class Evaluation {
             }
         }
         AssociativeSort.quickSort(counts, uris);
+        ArrayUtils.reverse(uris);
+        ArrayUtils.reverse(counts);
         Map<String, List<Double>> uriPosMapping = new HashMap<String, List<Double>>((int) (1.75 * uris.length));
         int minRank, maxRank;
         for (int i = 0; i < uris.length; ++i) {
