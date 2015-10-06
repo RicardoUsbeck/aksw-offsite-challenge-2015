@@ -5,7 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.aksw.jena_sparql_api.core.QueryExecutionFactory;
+import org.aksw.simba.challenge.CountedResources;
 import org.aksw.simba.challenge.Evaluation;
+import org.aksw.simba.challenge.QueryExecutor;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -20,7 +22,18 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 
 public class Baseline implements Approach {
 
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LoggerFactory.getLogger(Baseline.class);
+
+    private QueryExecutor executer = null;
+
+    @Deprecated
+    public Baseline() {
+    }
+
+    public Baseline(QueryExecutor executer) {
+        this.executer = executer;
+    }
 
     @Override
     public List<String> generateResourceRanking(List<String> queries, Model knowledgeBase) {
@@ -30,20 +43,29 @@ public class Baseline implements Approach {
     }
 
     public ObjectIntOpenHashMap<String> sumUpResults(Model model, List<String> queries) {
-        QueryExecutionFactory factory = Evaluation.createQueryExecutionFactory(model);
         ObjectIntOpenHashMap<String> countedResources = Evaluation.generateMapWithAllResources(model);
-        int count = 0;
-        for (String query : queries) {
-            addResultCounts(factory, query, countedResources);
-            ++count;
-            // if ((count % 100) == 0) {
-            // LOGGER.info("saw " + count + " queries.");
-            // }
+        if (executer == null) {
+            QueryExecutionFactory factory = Evaluation.createQueryExecutionFactory(model);
+            for (String query : queries) {
+                addResultCounts(factory, query, countedResources);
+            }
+            factory.close();
+        } else {
+            for (String query : queries) {
+                addResultCounts(query, countedResources);
+            }
         }
-        factory.close();
         return countedResources;
     }
 
+    public void addResultCounts(String query, ObjectIntOpenHashMap<String> countedResources) {
+        CountedResources result = executer.query(query);
+        for (int i = 0; i < result.uri.length; ++i) {
+            countedResources.putOrAdd(result.uri[i], result.count[i], result.count[i]);
+        }
+    }
+
+    @Deprecated
     public void addResultCounts(QueryExecutionFactory factory, String query,
             ObjectIntOpenHashMap<String> countedResources) {
         QueryExecution qe = factory.createQueryExecution(query);

@@ -79,6 +79,13 @@
 			<artifactId>topicmodeling.commons</artifactId>
 			<version>0.0.2-SNAPSHOT</version>
 		</dependency>
+		
+		<!-- cache implementations -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>18.0</version>
+		</dependency>
 
 		<!-- ~~~~~~~~~~~~~~~~~~~ Logging ~~~~~~~~~~~~~~~~~~~~~~ -->
 		<!-- slf4j: Logging API -->

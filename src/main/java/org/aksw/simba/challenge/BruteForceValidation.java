@@ -26,12 +26,14 @@ public class BruteForceValidation extends Evaluation {
 
     public static void main(String[] args) throws IOException {
         BruteForceValidation bfv = new BruteForceValidation();
-        bfv.run(new Baseline());
+        Model model = readModel(MODEL_FILE);
+        QueryExecutor executer = new QueryExecutor(model);
+        bfv.run(new Baseline(executer), model, executer);
+        executer.close();
     }
 
     @SuppressWarnings("unchecked")
-    public void run(Approach approach) throws IOException {
-        Model model = readModel(MODEL_FILE);
+    public void run(Approach approach, Model model, QueryExecutor executer) throws IOException {
         // read queries
         List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         int verificationSize = (int) (0.2 * queries.size());
@@ -48,10 +50,10 @@ public class BruteForceValidation extends Evaluation {
             crossValidationData = queries.subList(verificationSize, queries.size());
             // perform 10 fold cross validation on 80%
             // get the best trained result
-            currentFold = findBestFold(NUMBER_OF_FOLDS, crossValidationData, model, approach);
+            currentFold = findBestFold(NUMBER_OF_FOLDS, crossValidationData, model, executer, approach);
             // test on 20%
             verificationError = RMSD.getRMSD(currentFold.prediction,
-                    generateUriRankRangeMapping(countResources(Arrays.asList(verificationData), model)[0]));
+                    generateUriRankRangeMapping(countResources(Arrays.asList(verificationData), model, executer)[0]));
             // generate average of error of cross validation and 20 % test
             currentFold.error = (currentFold.error + verificationError) / 2.0;
             if (currentFold.error < bestError) {
@@ -79,6 +81,34 @@ public class BruteForceValidation extends Evaluation {
 
         LOGGER.info("Generating expected counts...");
         ObjectIntOpenHashMap<String> gsResults[] = countResources(partitions, model);
+
+        List<String> training;
+        FoldResult currentFold, bestFold = null;
+        for (int i = 0; i < n; i++) {
+            LOGGER.info("Starting fold " + i + "...");
+            training = generateTrainingSet(i, partitions);
+            currentFold = new FoldResult(approach.generateResourceRanking(training, model));
+            currentFold.error = RMSD.getRMSD(currentFold.prediction, generateExpectedResult(i, gsResults));
+            LOGGER.info("Error of fold " + i + " = " + currentFold.error);
+            if ((bestFold == null) || (bestFold.error > currentFold.error)) {
+                bestFold = currentFold;
+            }
+        }
+        return bestFold;
+    }
+
+    @SuppressWarnings("unchecked")
+    public FoldResult findBestFold(int n, List<String> queries, Model model, QueryExecutor executer, Approach approach)
+            throws IOException {
+        int partSize = queries.size() / n;
+        List<List<String>> partitions = new ArrayList<>(n);
+        for (int i = 0; i < (n - 1); i++) {
+            partitions.add(queries.subList(i * partSize, (i + 1) * partSize));
+        }
+        partitions.add(queries.subList((n - 1) * partSize, queries.size()));
+
+        LOGGER.info("Generating expected counts...");
+        ObjectIntOpenHashMap<String> gsResults[] = countResources(partitions, model, executer);
 
         List<String> training;
         FoldResult currentFold, bestFold = null;

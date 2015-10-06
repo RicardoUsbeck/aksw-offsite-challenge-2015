@@ -125,6 +125,25 @@ public class Evaluation {
         return countedResources;
     }
 
+    @SuppressWarnings("rawtypes")
+    protected ObjectIntOpenHashMap[] countResources(List<List<String>> partitions, Model model,
+            QueryExecutor executer) {
+        Baseline goldApproach = new Baseline(executer);
+        // QueryExecutionFactory factory = createQueryExecutionFactory(model);
+        ObjectIntOpenHashMap countedResources[] = new ObjectIntOpenHashMap[partitions.size()];
+        ObjectIntOpenHashMap<String> partitionCounts = new ObjectIntOpenHashMap<String>();
+        List<String> queries;
+        for (int i = 0; i < countedResources.length; ++i) {
+            partitionCounts = generateMapWithAllResources(model);
+            countedResources[i] = partitionCounts;
+            queries = partitions.get(i);
+            for (String query : queries) {
+                goldApproach.addResultCounts(query, partitionCounts);
+            }
+        }
+        return countedResources;
+    }
+
     protected Map<String, List<Double>> generateUriRankRangeMapping(ObjectIntOpenHashMap<String> countedResources) {
         String uris[] = new String[countedResources.assigned];
         int counts[] = new int[countedResources.assigned];
