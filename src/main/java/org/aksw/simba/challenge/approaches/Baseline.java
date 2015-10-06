@@ -25,7 +25,7 @@ public class Baseline implements Approach {
     @SuppressWarnings("unused")
     private static final Logger LOGGER = LoggerFactory.getLogger(Baseline.class);
 
-    private QueryExecutor executer = null;
+    protected QueryExecutor executer = null;
 
     @Deprecated
     public Baseline() {

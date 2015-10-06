@@ -9,12 +9,12 @@ import java.util.List;
 
 import org.aksw.simba.challenge.approaches.Approach;
 import org.aksw.simba.challenge.approaches.Baseline;
-import org.aksw.simba.challenge.approaches.FilteredBaseline;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
+import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.rdf.model.Model;
 
 public class BruteForceValidation extends Evaluation {
@@ -30,12 +30,12 @@ public class BruteForceValidation extends Evaluation {
         Model model = readModel(MODEL_FILE);
         QueryExecutor executer = new QueryExecutor(model);
         bfv.run(new Baseline(executer), model, executer);
-        bfv.run(new FilteredBaseline(executer), model, executer);
         executer.close();
     }
 
     @SuppressWarnings("unchecked")
     public void run(Approach approach, Model model, QueryExecutor executer) throws IOException {
+        Query q;
         // read queries
         List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         int verificationSize = (int) (0.2 * queries.size());

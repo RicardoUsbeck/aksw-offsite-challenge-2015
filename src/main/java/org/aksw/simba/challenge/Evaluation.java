@@ -182,13 +182,13 @@ public class Evaluation {
             Statement s;
             while (stmtIter.hasNext()) {
                 s = stmtIter.next();
-                if (s.getSubject().isResource()) {
+                if (s.getSubject().isResource() && !s.getSubject().isAnon()) {
                     resourcesWithoutCounts.putIfAbsent(s.getSubject().getURI(), 0);
                 }
                 if (s.getPredicate().isResource()) {
                     resourcesWithoutCounts.putIfAbsent(s.getPredicate().getURI(), 0);
                 }
-                if (s.getObject().isResource()) {
+                if (s.getObject().isResource() && !s.getObject().isAnon()) {
                     resourcesWithoutCounts.putIfAbsent(s.getObject().asResource().getURI(), 0);
                 }
             }
