@@ -94,7 +94,7 @@ public class Evaluation {
         return generateUriRankRangeMapping(gsResults[fold]);
     }
 
-    protected static Model readModel(String modelFile) throws FileNotFoundException {
+    public static Model readModel(String modelFile) throws FileNotFoundException {
         FileInputStream fin = null;
         try {
             Model model = ModelFactory.createDefaultModel();
