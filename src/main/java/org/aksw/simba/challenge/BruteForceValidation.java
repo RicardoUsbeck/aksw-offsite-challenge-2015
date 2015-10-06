@@ -33,12 +33,12 @@ public class BruteForceValidation extends Evaluation {
     public void run(Approach approach) throws IOException {
         Model model = readModel(MODEL_FILE);
         // read queries
-        List<String> queries = QueryLoader.loadQueries();
+        List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         int verificationSize = (int) (0.2 * queries.size());
         List<String> crossValidationData, verificationData;
         FoldResult currentFold;
         double verificationError, bestError = Double.MAX_VALUE;
-        int resultCounter = 0;
+        long timestamp;
         // 0...1000
         for (int i = 0; i < NUMBER_OF_TRIES; ++i) {
             // shuffle queries
@@ -55,10 +55,11 @@ public class BruteForceValidation extends Evaluation {
             // generate average of error of cross validation and 20 % test
             currentFold.error = (currentFold.error + verificationError) / 2.0;
             if (currentFold.error < bestError) {
-                LOGGER.info("Found a new best fold (error = " + currentFold.error + "). Writing it to file #"
-                        + resultCounter + ".");
+                timestamp = System.currentTimeMillis();
+                LOGGER.info("Found a new best fold (error = " + currentFold.error
+                        + "). Writing it to file with timestamp " + timestamp + ".");
                 bestError = currentFold.error;
-                ++resultCounter;
+                writeFold(currentFold.prediction, timestamp);
             } else {
                 LOGGER.info(
                         "This fold is not able to beat the best fold (" + currentFold.error + " > " + bestError + ").");
@@ -105,9 +106,9 @@ public class BruteForceValidation extends Evaluation {
 
     }
 
-    protected void writeFold(List<String> uris, int id) {
+    protected void writeFold(List<String> uris, long time) {
         try {
-            FileUtils.writeLines(new File(OUTPUT_FOLDER + "results_" + id + ".txt"), uris);
+            FileUtils.writeLines(new File(OUTPUT_FOLDER + "results_" + time + ".txt"), uris);
         } catch (IOException e) {
             LOGGER.error("Couldn't write result to file.");
         }

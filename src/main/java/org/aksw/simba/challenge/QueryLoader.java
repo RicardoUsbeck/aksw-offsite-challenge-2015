@@ -15,6 +15,7 @@ import java.util.List;
 public class QueryLoader {
 
     public static final String TRAINING_QUERIES_FILE = "data/trained_queries.txt";
+    public static final String CLEANED_TRAINING_QUERIES_FILE = "data/cleaned_queries.txt";
 
     public static void main(String[] args) throws IOException {
         List<String> queries = loadQueries(TRAINING_QUERIES_FILE);
