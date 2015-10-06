@@ -37,7 +37,7 @@
 			<url>http://maven.aksw.org/repository/snapshots</url>
 		</repository>
 	</repositories>
-	
+
 	<dependencies>
 		<!-- Jena -->
 		<dependency>
@@ -60,7 +60,12 @@
 		<dependency>
 			<groupId>org.aksw.jena-sparql-api</groupId>
 			<artifactId>jena-sparql-api-core</artifactId>
-			<version>2.13.0-1</version>
+			<version>${org.apache.jena.version}-1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.aksw.jena-sparql-api</groupId>
+			<artifactId>jena-sparql-api-cache-h2</artifactId>
+			<version>${org.apache.jena.version}-1</version>
 		</dependency>
 		<!-- High Performance Primitive Collections -->
 		<dependency>

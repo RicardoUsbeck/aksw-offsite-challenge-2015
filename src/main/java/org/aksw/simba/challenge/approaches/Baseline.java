@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.aksw.jena_sparql_api.core.QueryExecutionFactory;
-import org.aksw.jena_sparql_api.model.QueryExecutionFactoryModel;
+import org.aksw.simba.challenge.Evaluation;
 import org.aksw.simba.topicmodeling.commons.sort.AssociativeSort;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -29,8 +29,8 @@ public class Baseline implements Approach {
     }
 
     public ObjectIntOpenHashMap<String> sumUpResults(Model model, List<String> queries) {
-        QueryExecutionFactoryModel factory = new QueryExecutionFactoryModel(model);
-        ObjectIntOpenHashMap<String> countedResources = new ObjectIntOpenHashMap<String>();
+        QueryExecutionFactory factory = Evaluation.createQueryExecutionFactory(model);
+        ObjectIntOpenHashMap<String> countedResources = Evaluation.generateMapWithAllResources(model);
         int count = 0;
         for (String query : queries) {
             addResultCounts(factory, query, countedResources);
@@ -39,6 +39,7 @@ public class Baseline implements Approach {
                 LOGGER.info("saw " + count + " queries.");
             }
         }
+        factory.close();
         return countedResources;
     }
 

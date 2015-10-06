@@ -24,16 +24,25 @@ import org.slf4j.LoggerFactory;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 public class Evaluation {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Evaluation.class);
 
     private static final String MODEL_FILE = "data/swdf.nt";
+    private static final String CACHE_FOLDER = "./data/cache";
+
+    private static final long CACHE_TIME_TO_LIVE = 7 * 24 * 60 * 60 * 1000;
+
+    private static ObjectIntOpenHashMap<String> resourcesWithoutCounts = null;
 
     public static void main(String[] args) throws IOException {
         Evaluation eval = new Evaluation();
-        System.out.println(eval.crossValidationError(10, new Baseline()));
+        System.out.println("average error = " + eval.crossValidationError(10, new Baseline()));
     }
 
     @SuppressWarnings("unchecked")
@@ -41,21 +50,26 @@ public class Evaluation {
         List<String> queries = QueryLoader.loadQueries();
         int partSize = queries.size() / n;
         List<List<String>> partitions = new ArrayList<>(n);
-        for (int i = 0; i < (n - 1); i++) {
+        for (int i = 0; i < (n - 2); i++) {
             partitions.add(queries.subList(i * partSize, (i + 1) * partSize));
         }
+        partitions.add(queries.subList((n - 1) * partSize, queries.size()));
 
         Model model = readModel(MODEL_FILE);
+        LOGGER.info("Generating expected counts...");
         ObjectIntOpenHashMap<String> gsResults[] = countResources(partitions, model);
 
-        double rootMeanSquareSum = 0;
+        double foldError, rootMeanSquareSum = 0;
         List<String> training, predicted;
         for (int i = 0; i < n; i++) {
+            LOGGER.info("Starting fold " + i + "...");
             training = generateTrainingSet(i, partitions);
             predicted = approach.generateResourceRanking(training, model);
-            rootMeanSquareSum += RMSD.getRMSD(predicted, generateExpectedResult(i, gsResults));
+            foldError = RMSD.getRMSD(predicted, generateExpectedResult(i, gsResults));
+            LOGGER.info("Error of fold " + i + " = " + foldError);
+            rootMeanSquareSum += foldError;
         }
-        return rootMeanSquareSum;
+        return rootMeanSquareSum / n;
     }
 
     private List<String> generateTrainingSet(int fold, List<List<String>> partitions) {
@@ -66,7 +80,7 @@ public class Evaluation {
             }
         }
         List<String> trainingQueries = new ArrayList<String>(size);
-        for (int j = 0; j < trainingQueries.size(); ++j) {
+        for (int j = 0; j < partitions.size(); ++j) {
             if (fold != j) {
                 trainingQueries.addAll(partitions.get(j));
             }
@@ -102,24 +116,19 @@ public class Evaluation {
     @SuppressWarnings("rawtypes")
     protected ObjectIntOpenHashMap[] countResources(List<List<String>> partitions, Model model) {
         Baseline goldApproach = new Baseline();
-        QueryExecutionFactory factory = new QueryExecutionFactoryModel(model);
-        factory = new QueryExecutionFactoryTimeout(factory, 1000);
+        QueryExecutionFactory factory = createQueryExecutionFactory(model);
         ObjectIntOpenHashMap countedResources[] = new ObjectIntOpenHashMap[partitions.size()];
         ObjectIntOpenHashMap<String> partitionCounts = new ObjectIntOpenHashMap<String>();
         List<String> queries;
-        int count = 0;
         for (int i = 0; i < countedResources.length; ++i) {
-            partitionCounts = new ObjectIntOpenHashMap<String>();
+            partitionCounts = generateMapWithAllResources(model);
             countedResources[i] = partitionCounts;
             queries = partitions.get(i);
             for (String query : queries) {
                 goldApproach.addResultCounts(factory, query, partitionCounts);
-                ++count;
-                // if ((count % 100) == 0) {
-                LOGGER.info("saw " + count + " queries.");
-                // }
             }
         }
+        factory.close();
         return countedResources;
     }
 
@@ -149,5 +158,50 @@ public class Evaluation {
             uriPosMapping.put(uris[i], Arrays.asList(new Double(minRank), new Double(maxRank)));
         }
         return uriPosMapping;
+    }
+
+    public static ObjectIntOpenHashMap<String> generateMapWithAllResources(Model model) {
+        if (resourcesWithoutCounts == null) {
+            resourcesWithoutCounts = new ObjectIntOpenHashMap<String>();
+            StmtIterator stmtIter = model.listStatements();
+            Statement s;
+            while (stmtIter.hasNext()) {
+                s = stmtIter.next();
+                if (s.getSubject().isResource()) {
+                    resourcesWithoutCounts.putIfAbsent(s.getSubject().getURI(), 0);
+                }
+                if (s.getPredicate().isResource()) {
+                    resourcesWithoutCounts.putIfAbsent(s.getPredicate().getURI(), 0);
+                }
+                if (s.getObject().isResource()) {
+                    resourcesWithoutCounts.putIfAbsent(s.getObject().asResource().getURI(), 0);
+                }
+            }
+            NodeIterator nodeIter = model.listObjects();
+            RDFNode n;
+            while (nodeIter.hasNext()) {
+                n = nodeIter.next();
+                if (n.isResource()) {
+                    resourcesWithoutCounts.putIfAbsent(n.asResource().getURI(), 0);
+                }
+            }
+        }
+        return resourcesWithoutCounts.clone();
+    }
+
+    public static QueryExecutionFactory createQueryExecutionFactory(Model model) {
+        QueryExecutionFactory factory = new QueryExecutionFactoryModel(model);
+        factory = new QueryExecutionFactoryTimeout(factory, 1000);
+        // CacheBackend cacheBackend;
+        // try {
+        // cacheBackend = CacheCoreH2.create(true, (new
+        // File(CACHE_FOLDER)).getAbsolutePath(), "challenge",
+        // CACHE_TIME_TO_LIVE, true);
+        // } catch (Exception e) {
+        // throw new RuntimeException(e);
+        // }
+        // CacheFrontend cacheFrontend = new CacheFrontendImpl(cacheBackend);
+        // factory = new QueryExecutionFactoryCacheEx(factory, cacheFrontend);
+        return factory;
     }
 }
