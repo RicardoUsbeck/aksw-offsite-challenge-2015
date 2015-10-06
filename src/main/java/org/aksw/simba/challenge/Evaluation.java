@@ -42,8 +42,27 @@ public class Evaluation {
     private static ObjectIntOpenHashMap<String> resourcesWithoutCounts = null;
 
     public static void main(String[] args) throws IOException {
-        Evaluation eval = new Evaluation();
+        Evaluation eval = new Evaluation(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         System.out.println("average error = " + eval.crossValidationError(10, new Baseline()));
+    }
+
+    private String queryFile;
+
+    public Evaluation(String queryFile) {
+        this.queryFile = queryFile;
+    }
+
+    public double validate(Approach approach) throws IOException {
+        Model model = readModel(MODEL_FILE);
+        return validate(approach, model, null);
+    }
+
+    public double validate(Approach approach, Model model, QueryExecutor executor) throws IOException {
+        List<String> queries = QueryLoader.loadQueries();
+        LOGGER.info("Generating expected counts...");
+        Baseline baseline = new Baseline(executor);
+        return RMSD.getRMSD(approach.generateResourceRanking(queries, model),
+                generateUriRankRangeMapping(baseline.sumUpResults(model, queries)));
     }
 
     @SuppressWarnings("unchecked")

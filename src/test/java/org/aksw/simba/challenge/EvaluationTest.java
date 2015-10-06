@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.sparql.engine.ref.Evaluator;
 
 import junit.framework.Assert;
 
@@ -25,7 +26,7 @@ public class EvaluationTest {
         countedResources.put("2", 8);
         countedResources.put("3", 6);
 
-        Evaluation eval = new Evaluation();
+        Evaluation eval = new Evaluation("");
         Assert.assertEquals(0,
                 RMSD.getRMSD(Arrays.asList(approachResult), eval.generateUriRankRangeMapping(countedResources)),
                 0.000001);
@@ -46,8 +47,15 @@ public class EvaluationTest {
             bs.addResultCounts(factory, query, countedResources);
         }
 
-        Evaluation eval = new Evaluation();
+        Evaluation eval = new Evaluation(QueryLoader.TRAINING_QUERIES_FILE);
         Assert.assertEquals(0, RMSD.getRMSD(approachResult, eval.generateUriRankRangeMapping(countedResources)),
                 0.000001);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testValidate() throws IOException {
+        Evaluation eval = new Evaluation(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
+        Assert.assertEquals(0, eval.validate(new Baseline()), 0.000001);
     }
 }

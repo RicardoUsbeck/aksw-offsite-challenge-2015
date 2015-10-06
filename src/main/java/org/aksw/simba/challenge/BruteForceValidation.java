@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
-import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.rdf.model.Model;
 
 public class BruteForceValidation extends Evaluation {
@@ -26,16 +25,19 @@ public class BruteForceValidation extends Evaluation {
     private static final String OUTPUT_FOLDER = "data/";
 
     public static void main(String[] args) throws IOException {
-        BruteForceValidation bfv = new BruteForceValidation();
+        BruteForceValidation bfv = new BruteForceValidation(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         Model model = readModel(MODEL_FILE);
         QueryExecutor executer = new QueryExecutor(model);
         bfv.run(new Baseline(executer), model, executer);
         executer.close();
     }
 
+    public BruteForceValidation(String queryFile) {
+        super(queryFile);
+    }
+
     @SuppressWarnings("unchecked")
     public void run(Approach approach, Model model, QueryExecutor executer) throws IOException {
-        Query q;
         // read queries
         List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
         int verificationSize = (int) (0.2 * queries.size());
