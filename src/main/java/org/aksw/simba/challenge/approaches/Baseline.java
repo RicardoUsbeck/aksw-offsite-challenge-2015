@@ -79,7 +79,7 @@ public class Baseline implements Approach {
                 varNames = qs.varNames();
                 while (varNames.hasNext()) {
                     node = qs.get(varNames.next());
-                    if (node.isResource()) {
+                    if (node.isResource() && !node.isAnon()) {
                         countedResources.putOrAdd(node.asResource().getURI(), 1, 1);
                     }
                 }
