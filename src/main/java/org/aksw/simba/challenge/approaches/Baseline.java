@@ -36,9 +36,9 @@ public class Baseline implements Approach {
         for (String query : queries) {
             addResultCounts(factory, query, countedResources);
             ++count;
-            if ((count % 100) == 0) {
-                LOGGER.info("saw " + count + " queries.");
-            }
+            // if ((count % 100) == 0) {
+            // LOGGER.info("saw " + count + " queries.");
+            // }
         }
         factory.close();
         return countedResources;
@@ -63,7 +63,8 @@ public class Baseline implements Approach {
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("Got exception while executing query: \"" + query + "\".", e);
+            // LOGGER.warn("Got exception while executing query: \"" + query +
+            // "\".", e);
         }
     }
 

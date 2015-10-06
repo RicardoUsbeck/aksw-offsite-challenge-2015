@@ -33,7 +33,7 @@ public class Evaluation {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Evaluation.class);
 
-    private static final String MODEL_FILE = "data/swdf.nt";
+    protected static final String MODEL_FILE = "data/swdf.nt";
     private static final String CACHE_FOLDER = "./data/cache";
 
     private static final long CACHE_TIME_TO_LIVE = 7 * 24 * 60 * 60 * 1000;
@@ -59,20 +59,22 @@ public class Evaluation {
         LOGGER.info("Generating expected counts...");
         ObjectIntOpenHashMap<String> gsResults[] = countResources(partitions, model);
 
-        double foldError, rootMeanSquareSum = 0;
+        double rootMeanSquareSum = 0;
+        double foldErrors[] = new double[n];
         List<String> training, predicted;
         for (int i = 0; i < n; i++) {
             LOGGER.info("Starting fold " + i + "...");
             training = generateTrainingSet(i, partitions);
             predicted = approach.generateResourceRanking(training, model);
-            foldError = RMSD.getRMSD(predicted, generateExpectedResult(i, gsResults));
-            LOGGER.info("Error of fold " + i + " = " + foldError);
-            rootMeanSquareSum += foldError;
+            foldErrors[i] = RMSD.getRMSD(predicted, generateExpectedResult(i, gsResults));
+            LOGGER.info("Error of fold " + i + " = " + foldErrors[i]);
+            rootMeanSquareSum += foldErrors[i];
         }
+        LOGGER.info("Error of folds " + Arrays.toString(foldErrors));
         return rootMeanSquareSum / n;
     }
 
-    private List<String> generateTrainingSet(int fold, List<List<String>> partitions) {
+    protected List<String> generateTrainingSet(int fold, List<List<String>> partitions) {
         int size = 0;
         for (int j = 0; j < partitions.size(); ++j) {
             if (fold != j) {
@@ -88,7 +90,7 @@ public class Evaluation {
         return trainingQueries;
     }
 
-    private Map<String, List<Double>> generateExpectedResult(int fold, ObjectIntOpenHashMap<String>[] gsResults) {
+    protected Map<String, List<Double>> generateExpectedResult(int fold, ObjectIntOpenHashMap<String>[] gsResults) {
         return generateUriRankRangeMapping(gsResults[fold]);
     }
 
