@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.sparql.engine.ref.Evaluator;
 
 import junit.framework.Assert;
 
@@ -36,7 +35,7 @@ public class EvaluationTest {
     @Test
     public void testReadWrite() throws IOException {
         Baseline bs = new Baseline();
-        List<String> queries = QueryLoader.loadQueries();
+        List<String> queries = QueryLoader.loadQueries("data/test_queries.txt");
         Model model = Evaluation.readModel(Evaluation.MODEL_FILE);
         List<String> approachResult = bs.generateResourceRanking(queries, model);
         Evaluation.generateMapWithAllResources(model);
@@ -47,15 +46,23 @@ public class EvaluationTest {
             bs.addResultCounts(factory, query, countedResources);
         }
 
-        Evaluation eval = new Evaluation(QueryLoader.TRAINING_QUERIES_FILE);
+        Evaluation eval = new Evaluation("data/test_queries.txt");
         Assert.assertEquals(0, RMSD.getRMSD(approachResult, eval.generateUriRankRangeMapping(countedResources)),
                 0.000001);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testValidate() throws IOException {
+        Model model = Evaluation.readModel(Evaluation.MODEL_FILE);
+        QueryExecutor executor = new QueryExecutor(model);
         Evaluation eval = new Evaluation(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
+        Assert.assertEquals(0, eval.validate(new Baseline(executor), model, executor), 0.000001);
+        executor.close();
+    }
+
+    @Test
+    public void testValidateWithoutCaching() throws IOException {
+        Evaluation eval = new Evaluation("data/test_queries.txt");
         Assert.assertEquals(0, eval.validate(new Baseline()), 0.000001);
     }
 }

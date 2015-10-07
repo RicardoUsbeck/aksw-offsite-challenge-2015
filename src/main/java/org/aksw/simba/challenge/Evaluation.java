@@ -58,8 +58,7 @@ public class Evaluation {
     }
 
     public double validate(Approach approach, Model model, QueryExecutor executor) throws IOException {
-        List<String> queries = QueryLoader.loadQueries();
-        LOGGER.info("Generating expected counts...");
+        List<String> queries = QueryLoader.loadQueries(queryFile);
         Baseline baseline = new Baseline(executor);
         return RMSD.getRMSD(approach.generateResourceRanking(queries, model),
                 generateUriRankRangeMapping(baseline.sumUpResults(model, queries)));
@@ -67,7 +66,7 @@ public class Evaluation {
 
     @SuppressWarnings("unchecked")
     public double crossValidationError(int n, Approach approach) throws IOException {
-        List<String> queries = QueryLoader.loadQueries(QueryLoader.CLEANED_TRAINING_QUERIES_FILE);
+        List<String> queries = QueryLoader.loadQueries(queryFile);
         int partSize = queries.size() / n;
         List<List<String>> partitions = new ArrayList<>(n);
         for (int i = 0; i < (n - 1); i++) {
@@ -211,14 +210,6 @@ public class Evaluation {
                     resourcesWithoutCounts.putIfAbsent(s.getObject().asResource().getURI(), 0);
                 }
             }
-            NodeIterator nodeIter = model.listObjects();
-            RDFNode n;
-            while (nodeIter.hasNext()) {
-                n = nodeIter.next();
-                if (n.isResource()) {
-                    resourcesWithoutCounts.putIfAbsent(n.asResource().getURI(), 0);
-                }
-            }
         }
         return resourcesWithoutCounts.clone();
     }
@@ -226,16 +217,6 @@ public class Evaluation {
     public static QueryExecutionFactory createQueryExecutionFactory(Model model) {
         QueryExecutionFactory factory = new QueryExecutionFactoryModel(model);
         factory = new QueryExecutionFactoryTimeout(factory, 1000);
-        // CacheBackend cacheBackend;
-        // try {
-        // cacheBackend = CacheCoreH2.create(true, (new
-        // File(CACHE_FOLDER)).getAbsolutePath(), "challenge",
-        // CACHE_TIME_TO_LIVE, true);
-        // } catch (Exception e) {
-        // throw new RuntimeException(e);
-        // }
-        // CacheFrontend cacheFrontend = new CacheFrontendImpl(cacheBackend);
-        // factory = new QueryExecutionFactoryCacheEx(factory, cacheFrontend);
         return factory;
     }
 }

@@ -13,9 +13,10 @@ public class AxelsEvaluation {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AxelsEvaluation.class);
 
-    private static final String TEST_QUERIES[] = new String[] { "AXEL HAS TO PUT THE CORRECT FILE NAME!!!" };
-    private static final String PARTICIPANT_FILES[] = new String[] {
-            "AXEL HAS TO PUT THE CORRECT FILE NAMES OF THE PARTICIPANTS!!!" };
+    // "AXEL HAS TO PUT THE CORRECT FILE NAME!!!"
+    private static final String TEST_QUERIES[] = new String[] { QueryLoader.CLEANED_TRAINING_QUERIES_FILE };
+    // "AXEL HAS TO PUT THE CORRECT FILE NAMES OF THE PARTICIPANTS!!!"
+    private static final String PARTICIPANT_FILES[] = new String[] { "data/baselineOutput.txt" };
 
     public static void main(String[] args) throws IOException {
         Evaluation eval;
@@ -30,5 +31,7 @@ public class AxelsEvaluation {
                 LOGGER.info(PARTICIPANT_FILES[i] + " on " + TEST_QUERIES[j] + " has an error of " + error);
             }
         }
+        LOGGER.info("Finished!");
+        qe.close();
     }
 }

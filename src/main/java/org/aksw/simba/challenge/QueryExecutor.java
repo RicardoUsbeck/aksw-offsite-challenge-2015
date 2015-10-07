@@ -55,9 +55,6 @@ public class QueryExecutor extends CacheLoader<String, CountedResources>implemen
                 while (varNames.hasNext()) {
                     node = qs.get(varNames.next());
                     if (node.isResource() && !node.isAnon()) {
-                        if(node.asResource().getURI() == null) {
-                            System.out.println("STOP!");
-                        }
                         countedResources.putOrAdd(node.asResource().getURI(), 1, 1);
                     }
                 }
@@ -74,6 +71,7 @@ public class QueryExecutor extends CacheLoader<String, CountedResources>implemen
             if (countedResources.allocated[i]) {
                 result.uri[pos] = (String) ((Object[]) countedResources.keys)[i];
                 result.count[pos] = countedResources.values[i];
+                ++pos;
             }
         }
 
